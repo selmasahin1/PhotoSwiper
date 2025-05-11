@@ -5,52 +5,52 @@
 //  Created by Selma Sahin on 04.05.2025.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+
+    @State private var currentIndex = 0
+    @StateObject var photoManager = PhotoLibraryManager()
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+        VStack {
+            if currentIndex < photoManager.assets.count {
+                PhotoSortView(
+                    asset: photoManager.assets[currentIndex],
+                    onSwipeLeft: {
+                        photoManager.moveToDeleteAlbum(
+                            asset: photoManager.assets[currentIndex])
+                        currentIndex += 1  // Move to the next photo
+                        loadMorePhotosIfNeeded()
+                    },
+                    onSwipeRight: {
+                        currentIndex += 1  // Move to the next photo
+                        loadMorePhotosIfNeeded()
                     }
-                }
-                .onDelete(perform: deleteItems)
+                )
+            } else {
+                Text("No more photos!")
+                    .padding()
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
+        }
+        .onChange(of: currentIndex) { newValue, oldValue in
+            if newValue >= photoManager.assets.count {
+                currentIndex = photoManager.assets.count - 1
             }
-        } detail: {
-            Text("Select an item")
+        }
+        .onAppear {
+            // Ensure assets are loaded when view appears
+            print("new photo loading")
+            photoManager.loadPhotos()
         }
     }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
+    
+    private func loadMorePhotosIfNeeded() {
+        // If the current index is near the end of the list, load more photos
+        if currentIndex >= photoManager.assets.count - 1 {
+            print("Loading more photos...")
+            photoManager.loadPhotos()
         }
     }
 }
