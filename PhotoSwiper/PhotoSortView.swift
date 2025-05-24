@@ -13,6 +13,8 @@ struct PhotoSortView: View {
     let asset: PHAsset
     let onSwipeLeft: () -> Void
     let onSwipeRight: () -> Void
+    let onDoubleTap: () -> Void
+
 
     @State private var uiImage: UIImage? = nil
     @State private var offset: CGSize = .zero
@@ -51,6 +53,12 @@ struct PhotoSortView: View {
                             offset = .zero
                         }
                     }
+                    .simultaneously(with:
+                        TapGesture(count: 2)
+                            .onEnded {
+                                onDoubleTap()
+                            }
+                    )
             )
             .animation(.spring(), value: offset)
 
@@ -96,10 +104,6 @@ struct PhotoSortView: View {
             print("📤 Asset changed, loading new image...")
             loadImage()  // Reload image whenever the asset changes
         }
-    }
-
-    private func swipeLeft() {
-        print("buttonClicked")
     }
 
     func loadImage() {

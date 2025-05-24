@@ -10,11 +10,24 @@ import SwiftUI
 
 struct ContentView: View {
 
-    @State private var currentIndex = 0
+    @AppStorage("currentPhotoIndex") private var currentIndex = 0
     @StateObject var photoManager = PhotoLibraryManager()
 
     var body: some View {
         VStack {
+            Button(action: {
+                currentIndex = 0
+            }) {
+                Text("Reset")
+                    .padding(.horizontal, 25)
+                    .padding(.vertical, 10)
+                    .background(Color(hex: 0x9090D1))
+                    .foregroundColor(.white)
+                    .clipShape(Capsule())
+            }
+            .padding(.top, 50)
+            .padding(.trailing, 20)
+            
             if currentIndex < photoManager.assets.count {
                 PhotoSortView(
                     asset: photoManager.assets[currentIndex],
@@ -27,12 +40,16 @@ struct ContentView: View {
                     onSwipeRight: {
                         currentIndex += 1  // Move to the next photo
                         loadMorePhotosIfNeeded()
+                    },
+                    onDoubleTap: {
+                        currentIndex -= 1
                     }
                 )
             } else {
                 Text("No more photos!")
                     .padding()
             }
+            
         }
         .onChange(of: currentIndex) { newValue, oldValue in
             if newValue >= photoManager.assets.count {
@@ -45,7 +62,7 @@ struct ContentView: View {
             photoManager.loadPhotos()
         }
     }
-    
+
     private func loadMorePhotosIfNeeded() {
         // If the current index is near the end of the list, load more photos
         if currentIndex >= photoManager.assets.count - 1 {
